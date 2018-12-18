@@ -15,7 +15,13 @@
 #include "costs.h"
 #include "Python.h"
 
+
+
+
 using namespace std;
+///////
+
+
 
 // for convenience
 using json = nlohmann::json;
@@ -150,63 +156,13 @@ vector<double> getXY(double s, double d, vector<double> maps_s, vector<double> m
 
 
 int main() {
-
-///////////////////////////////////////////////////////////////////////////////
-// Python & c++ cross coding
-    Py_Initialize();//
+/////////////////////////////////////////
 
 
-    PyRun_SimpleString("import numpy as np");
-    PyRun_SimpleString("import matplotlib.pyplot as plt");
-    PyRun_SimpleString("import copy");
-    PyRun_SimpleString("import math");
-    PyRun_SimpleString("import sys");
-    PyRun_SimpleString("sys.path.append('/home/lucian/Desktop/Path_planning_method/CarND-Path-Planning-Project-origin/src')");
 
-    PyRun_SimpleString("import cubic_spline_planner");
-    PyRun_SimpleString("import frenet_optimal_trjectory");
 
-    PyObject* moduleName = PyUnicode_FromString("frenet_optimal_trjectory");
-    PyObject* pModule = PyImport_Import(moduleName);
-    if (!pModule) // 加载模块失败
-	{
-		cout << "[ERROR] Python get module failed." << endl;
-		return 0;
-	}
-	cout << "[INFO] Python get module succeed." << endl;
-
-	PyObject* pv = PyObject_GetAttrString(pModule, "main_frenet_optimal_trajectory");
-	if (!pv || !PyCallable_Check(pv))  // 验证是否加载成功
-	{
-		cout << "[ERROR] Can't find funftion (main_frenet_optimal_trajectory)" << endl;
-		return 0;
-	}
-	cout << "[INFO] Get function (main_frenet_optimal_trajectory) succeed." << endl;
-
-	// 设置参数
-	PyObject* args = PyTuple_New(2);   // 2个参数
-	PyObject* arg1 = PyLong_FromLong(4);    // 参数一设为4
-	PyObject* arg2 = PyLong_FromLong(3);    // 参数二设为3
-	PyTuple_SetItem(args, 0, arg1);
-	PyTuple_SetItem(args, 1, arg2);
-
-	// 调用函数
-	PyObject* pRet = PyObject_CallObject(pv, args);
-
-// 获取参数
-    if (pRet)  // 验证是否调用成功
-	{
-		long result = PyLong_AsLong(pRet);
-		cout << "result:" << result;
-	}
-
-    PyRun_SimpleString("print  ('Hello Python! ')\n");
-    Py_Finalize();//
-
-// Python & c++ cross coding ends
-    ///////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////
   uWS::Hub h;
-
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   vector<double> map_waypoints_x;
   vector<double> map_waypoints_y;
@@ -563,6 +519,26 @@ interp dy: (0)-0.99994 		(134)-1.00001 		(268)-0.994751 		(402)-0.931776 	(536)-
 						vector<vector<double>> preds = other_car.generate_predictions(traj_start_time, duration);
 						predictions[v_id] = preds;
 					}
+
+// other_cars_x_y is defined for python
+				vector<vector<double>> other_cars_x_y;
+				vector<double> other_cars_x;
+				vector<double> other_cars_y;
+				 for (auto pred : predictions) {
+					 	auto sd = pred.second;
+					 	other_cars_x_y=sd;
+    				for (int i = 0; i < N_SAMPLES; i += N_SAMPLES/3-1) {					 		
+					 		other_cars_x.push_back(other_cars_x_y[i][0]);
+					 		other_cars_y.push_back(other_cars_x_y[i][1]);
+					 		//cout << other_cars_x[i] << "     "<<other_cars_y[i] << endl;
+					 	}
+					 	//cout << endl;
+					 }
+					 //cout<<other_cars_x.size()<<endl;
+					 //cout<<other_cars_y.size()<<endl;
+
+
+
 
 					// // DEBUG
 //	(0: 1079.759,	1178.138,	14.21056,	5.480793,	02.2602,	2.090889) 		(124.84)
@@ -939,6 +915,143 @@ cout << ")" << endl;
 					// }
 					// cout << endl << endl;
 					// // log_file << endl;
+
+///////////////////////////////////////////////////////////////////////////////
+// Python & c++ cross coding
+    Py_Initialize();//
+
+    PyRun_SimpleString("import numpy as np");
+    PyRun_SimpleString("import matplotlib.pyplot as plt");
+    PyRun_SimpleString("import copy");
+    PyRun_SimpleString("import math");
+    PyRun_SimpleString("import sys");
+    PyRun_SimpleString("sys.path.append('/home/lucian/Desktop/Frenet_Optimal_Trajectory_in_Simulator/src')");
+    PyRun_SimpleString("import cubic_spline_planner");
+    PyRun_SimpleString("import frenet_optimal_trjectory");
+
+    PyObject* moduleName = PyUnicode_FromString("frenet_optimal_trjectory");
+    PyObject* pModule = PyImport_Import(moduleName);
+    if (!pModule){// 加载模块失败
+		cout << "[ERROR] Python get module failed." << endl;
+		return 0;
+	}
+	cout << "[INFO] Python get module succeed." << endl;
+
+	PyObject* pv = PyObject_GetAttrString(pModule, "main_frenet_optimal_trajectory");
+	if (!pv || !PyCallable_Check(pv)){  // 验证是否加载成功
+		cout << "[ERROR] Can't find funftion (main_frenet_optimal_trajectory)" << endl;
+		return 0;
+	}
+	cout << "[INFO] Get function (main_frenet_optimal_trajectory) succeed." << endl;
+
+	// 设置参数 transfer std::vector<double> to numpy.array
+	//vector<double> coarse_waypoints_s, coarse_waypoints_x, coarse_waypoints_y,coarse_waypoints_dx, coarse_waypoints_dy;
+
+	//coarse_waypoints_x_python
+	PyObject  *pValue, *coarse_waypoints_x_python;	
+			vector<double> xvec=coarse_waypoints_x;
+			//Transfer the C++ vector to a python tuple
+			coarse_waypoints_x_python = PyTuple_New(xvec.size());	
+			for (int i = 0; i < xvec.size(); ++i) {
+				pValue = PyFloat_FromDouble(xvec[i]);
+				if (!pValue) {
+					Py_DECREF(coarse_waypoints_x_python);
+					Py_DECREF(pModule);
+					fprintf(stderr, "Cannot convert array value\n");
+					return 1;
+				}
+				PyTuple_SetItem(coarse_waypoints_x_python, i, pValue);
+			}
+
+		//coarse_waypoints_y_python 
+	PyObject  *pValue_1, *coarse_waypoints_y_python;	
+			vector<double> yvec=coarse_waypoints_y;
+			//Transfer the C++ vector to a python tuple
+			coarse_waypoints_y_python = PyTuple_New(yvec.size());	
+			for (int i = 0; i < yvec.size(); ++i) {
+				pValue_1 = PyFloat_FromDouble(yvec[i]);
+				if (!pValue_1) {
+					Py_DECREF(coarse_waypoints_y_python);
+					Py_DECREF(pModule);
+					fprintf(stderr, "Cannot convert array value\n");
+					return 1;
+				}
+				PyTuple_SetItem(coarse_waypoints_y_python, i, pValue_1);
+			}
+
+//objects to avoid
+//other_cars_x,other_cars_y  from Udacity Simulator
+
+			//other_cars_x
+
+			PyObject  *pValue_2, *other_cars_x_python;	
+			vector<double> xvec_2=other_cars_x;
+			//Transfer the C++ vector to a python tuple
+			other_cars_x_python = PyTuple_New(xvec_2.size());	
+			for (int i = 0; i < xvec_2.size(); ++i) {
+				pValue_2 = PyFloat_FromDouble(xvec_2[i]);
+				if (!pValue_2) {
+					Py_DECREF(other_cars_x_python);
+					Py_DECREF(pModule);
+					fprintf(stderr, "Cannot convert array value\n");
+					return 1;
+				}
+				PyTuple_SetItem(other_cars_x_python, i, pValue_2);
+			}
+
+
+						PyObject  *pValue_3, *other_cars_y_python;	
+			vector<double> xvec_3=other_cars_y;
+			//Transfer the C++ vector to a python tuple
+			other_cars_y_python = PyTuple_New(xvec_3.size());
+			for (int i = 0; i < xvec_3.size(); ++i) {
+				pValue_3 = PyFloat_FromDouble(xvec_3[i]);
+				if (!pValue_3) {
+					Py_DECREF(other_cars_y_python);
+					Py_DECREF(pModule);
+					fprintf(stderr, "Cannot convert array value\n");
+					return 1;
+				}
+				PyTuple_SetItem(other_cars_y_python, i, pValue_3);
+			}
+
+
+
+
+
+	PyObject* args = PyTuple_New(4);   // 3个参数
+	PyObject* arg1 = coarse_waypoints_x_python;    // 参数一
+	PyObject* arg2 = coarse_waypoints_y_python;    // 参数二
+	PyObject* arg3 = other_cars_x_python;     //third
+	PyObject* arg4 = other_cars_y_python;    // forth
+	PyTuple_SetItem(args, 0, arg1);
+	PyTuple_SetItem(args, 1, arg2);
+	PyTuple_SetItem(args, 2, arg3);
+	PyTuple_SetItem(args, 3, arg4);
+	// 调用函数
+	PyObject* pRet = PyObject_CallObject(pv, args);
+	//////////////////////////
+	//result = (s0,c_d,c_d_d,c_d_dd,c_speed)
+	double s0=0,c_d=0,c_d_d=0,c_d_dd=0,c_speed=0;
+	PyArg_ParseTuple(pRet,"d|d|d|d|d",&s0,&c_d,&c_d_d,&c_d_dd,&c_speed);
+
+
+// 获取参数
+	
+    if (pRet)  // 验证是否调用成功
+	{
+
+		cout<<"s0"<< s0<<"   "<<"c_d"<<c_d<<"   "<<"c_d_d"<< c_d_d<< "c_d_dd" <<c_d_dd<<"c_speed"<<c_speed<<endl;
+	}
+
+    PyRun_SimpleString("print  ('Hello Python! ')\n");
+    Py_Finalize();
+// Python & c++ cross coding ends
+    ///////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 					msgJson["next_x"] = next_x_vals;
 					msgJson["next_y"] = next_y_vals;

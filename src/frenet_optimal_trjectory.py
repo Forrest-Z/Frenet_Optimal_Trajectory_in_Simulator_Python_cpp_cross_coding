@@ -299,19 +299,25 @@ def generate_target_course(x, y):
     return rx, ry, ryaw, rk, csp
 
 
-def main_frenet_optimal_trajectory(a,b):
+
+def main_frenet_optimal_trajectory(wx_1,wy_1,ob_x_1,ob_y_1):
     print(__file__ + " start!!")
-    print(a,b)
+    #print(wx_1)
+    #print(wy_1)
     # way points
-    wx = [0.0, 10.0, 20.5, 35.0, 70.5]
-    wy = [0.0, -6.0, 5.0, 6.5, 0.0]
+    #wx = [0.0, 10.0, 20.5, 35.0, 70.5]
+    #wy = [0.0, -6.0, 5.0, 6.5, 0.0]
+    wx=np.array(wx_1,dtype=float)
+    wy=np.array(wy_1,dtype=float)
+
+    ob_x=np.array(ob_x_1,dtype=float)
+    ob_y=np.array(ob_y_1,dtype=float)
+
+    #print(ob_x)
+    #print(ob_y)
     # obstacle lists
-    ob = np.array([[20.0, 10.0],
-                   [30.0, 6.0],
-                   [30.0, 8.0],
-                   [35.0, 8.0],
-                   [50.0, 3.0]
-                   ])
+    ob=np.array([ob_x,ob_y])
+    #ob = np.array([ [20.0, 10.0],[30.0, 6.0],[30.0, 8.0],[35.0, 8.0],[50.0, 3.0] ])
 
     tx, ty, tyaw, tc, csp = generate_target_course(wx, wy)
 
@@ -324,20 +330,28 @@ def main_frenet_optimal_trajectory(a,b):
 
     area = 20.0  # animation area length [m]
 
-    for i in range(500):
-        path = frenet_optimal_planning(
-            csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
+    #for i in range(500):
+    for i in range(3):
+        path = frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob)
 
         s0 = path.s[1]
         c_d = path.d[1]
         c_d_d = path.d_d[1]
         c_d_dd = path.d_dd[1]
         c_speed = path.s_d[1]
+        print(s0,c_d,c_d_d,c_d_dd,c_speed)
+        print("path \n")
+        
+
+        result = (s0,c_d,c_d_d,c_d_dd,c_speed)
+        return result
 
         if np.hypot(path.x[1] - tx[-1], path.y[1] - ty[-1]) <= 1.0:
             print("Goal")
             break
 
+        print("Finish")
+"""
         if show_animation:
             plt.cla()
             plt.plot(tx, ty)
@@ -349,13 +363,14 @@ def main_frenet_optimal_trajectory(a,b):
             plt.title("v[km/h]:" + str(c_speed * 3.6)[0:4])
             plt.grid(True)
             plt.pause(0.0001)
+"""
 
-    print("Finish")
+"""
     if show_animation:
         plt.grid(True)
         plt.pause(0.0001)
         plt.show()
-
+"""
 
 #if __name__ == '__main__':
-# main(1,2)
+# main()
